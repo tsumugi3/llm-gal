@@ -8,9 +8,14 @@ data/saves/
 data/game.log
 config.py
 
+# 工具安装产物
+.agents/
+skills-lock.json
+
 # IDE
 .vscode/
 .idea/
+.claude/
 
 # OS
 .DS_Store

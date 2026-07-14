@@ -11,6 +11,10 @@ from ui.widgets import show_error, show_info, show_question
 from PyQt6.QtCore import pyqtSignal, QThread, pyqtSlot
 from models.game_models import GameState, WorldSetting, Character
 from engine.story_engine import StoryEngine
+from ui.design_tokens import (
+    C_PAPER, C_PAPER_2, C_INK, C_MUTED, C_RULE, C_ACCENT, C_DANGER,
+    dialog_ok_button_style, dialog_cancel_button_style,
+)
 
 
 class WorldGenThread(QThread):
@@ -112,10 +116,10 @@ class SettingsScreen(QWidget):
 
         # 标题
         title = QLabel("✨ AI Galgame 设定")
-        title.setStyleSheet("font-size: 28px; font-weight: bold; color: #c4a35a; padding: 8px;")
-
+        from ui.design_tokens import C_ACCENT, C_MUTED, C_INK
+        title.setStyleSheet(f"font-size:28px;font-weight:bold;color:{C_ACCENT};padding:8px;")
         subtitle = QLabel("定义你的故事世界，或让AI为你生成一切")
-        subtitle.setStyleSheet("font-size: 14px; color: #8a8a9a; padding: 4px;")
+        subtitle.setStyleSheet(f"font-size:14px;color:{C_MUTED};padding:4px;")
 
         # 配置状态指示器
         from config import PROVIDER, MODEL_ID, ANTHROPIC_API_KEY
@@ -123,9 +127,9 @@ class SettingsScreen(QWidget):
         status_text = f"后端: {PROVIDER} | 模型: {MODEL_ID} | {key_status}"
         status_label = QLabel(status_text)
         status_label.setStyleSheet(
-            "font-size: 12px; padding: 6px 12px; background-color: #0f0f23; "
-            "border: 1px solid #533a5e; border-radius: 4px; "
-            f"color: {'#c4a35a' if ANTHROPIC_API_KEY else '#e05555'};"
+            f"font-size:12px;padding:6px 12px;background-color:{C_PAPER_2};"
+            f"border:1px solid {C_RULE};border-radius:4px;"
+            f"color:{C_ACCENT if ANTHROPIC_API_KEY else C_DANGER};"
         )
 
         main_layout.addWidget(title)
@@ -147,26 +151,15 @@ class SettingsScreen(QWidget):
         main_layout.addWidget(tabs)
 
         # 开始 / 继续按钮
+        from ui.design_tokens import primary_button_style, secondary_button_style
         btn_layout = QHBoxLayout()
-        btn_style = """
-            QPushButton {
-                font-size: 18px; font-weight: bold;
-                padding: 14px 40px; border-radius: 10px;
-            }
-        """
 
         self.continue_btn = QPushButton("📂 继续游戏")
-        self.continue_btn.setStyleSheet(btn_style + """
-            QPushButton { background-color: #16213e; color: #c4a35a; border: 2px solid #533a5e; }
-            QPushButton:hover { background-color: #533a5e; }
-        """)
+        self.continue_btn.setStyleSheet(secondary_button_style())
         self.continue_btn.clicked.connect(self._on_continue)
 
         self.start_btn = QPushButton("🎮 开始游戏")
-        self.start_btn.setStyleSheet(btn_style + """
-            QPushButton { background-color: #c4a35a; color: #1a1a2e; }
-            QPushButton:hover { background-color: #d4b36a; }
-        """)
+        self.start_btn.setStyleSheet(primary_button_style())
         self.start_btn.clicked.connect(self._on_start)
 
         btn_layout.addStretch()
@@ -182,7 +175,7 @@ class SettingsScreen(QWidget):
         layout = QVBoxLayout(w)
 
         hint = QLabel("输入一个主题或一句话描述，AI将自动生成完整的世界观和角色设定")
-        hint.setStyleSheet("color: #8a8a9a; font-size: 13px; padding: 8px;")
+        hint.setStyleSheet(f"color:{C_MUTED};font-size:13px;padding:8px;")
 
         self.theme_input = QLineEdit()
         self.theme_input.setPlaceholderText("例如: 一个魔法学院里，学生们与魔法生物签订契约共同成长的故事")
@@ -192,7 +185,7 @@ class SettingsScreen(QWidget):
         self.gen_btn.clicked.connect(self._on_generate_world)
 
         self.gen_status = QLabel("")
-        self.gen_status.setStyleSheet("color: #8a8a9a; font-size: 13px;")
+        self.gen_status.setStyleSheet(f"color:{C_MUTED};font-size:13px;")
 
         self.gen_preview = QTextEdit()
         self.gen_preview.setReadOnly(True)
@@ -397,7 +390,7 @@ class SettingsScreen(QWidget):
         layout = QVBoxLayout(dlg)
 
         label = QLabel("选择一个存档继续游戏:")
-        label.setStyleSheet("font-size:14px;color:#e0d8c0;")
+        label.setStyleSheet(f"font-size:14px;color:{C_INK};")
         layout.addWidget(label)
 
         lst = QListWidget()
@@ -410,9 +403,9 @@ class SettingsScreen(QWidget):
 
         btn_row = QHBoxLayout()
         ok_btn = QPushButton("继续")
-        ok_btn.setStyleSheet("background-color:#c4a35a;color:#1a1a2e;font-weight:bold;padding:8px 24px;")
+        ok_btn.setStyleSheet(dialog_ok_button_style())
         cancel_btn = QPushButton("取消")
-        cancel_btn.setStyleSheet("padding:8px 24px;")
+        cancel_btn.setStyleSheet(dialog_cancel_button_style())
 
         def on_ok():
             idx = lst.currentRow()

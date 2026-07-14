@@ -12,6 +12,12 @@ from engine.story_engine import StoryEngine
 from engine.save_manager import SaveManager
 from models.game_models import GameTurn, Choice
 from ui.widgets import show_error, show_info, show_question
+from ui.design_tokens import (
+    C_PAPER, C_PAPER_2, C_INK, C_MUTED, C_SUBTLE, C_RULE, C_ACCENT,
+    HTML_COLORS, choice_button_style, topbar_button_style,
+    dialog_ok_button_style, dialog_cancel_button_style,
+    alpha,
+)
 
 
 class TurnGenThread(QThread):
@@ -67,21 +73,7 @@ class ChoiceButton(QPushButton):
         self.choice = choice
         self.setMinimumHeight(44)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet("""
-            QPushButton {
-                background-color: rgba(22, 33, 62, 0.92);
-                color: #e0d8c0;
-                border: 2px solid #533a5e;
-                border-radius: 10px;
-                padding: 12px 18px;
-                font-size: 14px;
-                text-align: left;
-            }
-            QPushButton:hover {
-                background-color: #533a5e;
-                border-color: #c4a35a;
-            }
-        """)
+        self.setStyleSheet(choice_button_style())
 
 
 class GameScreen(QWidget):
@@ -126,10 +118,7 @@ class GameScreen(QWidget):
     # ═══════════════════════════════════════════════
 
     def _init_ui(self):
-        self.setStyleSheet(
-            "background-color: #0d0d1a;"
-            "font-family: 'Microsoft YaHei', 'SimHei', 'Noto Sans SC', sans-serif;"
-        )
+        self.setStyleSheet(f"background-color:{C_PAPER};font-family:'Microsoft YaHei','SimHei','Noto Sans SC',sans-serif;")
         main = QVBoxLayout(self)
         main.setContentsMargins(0, 0, 0, 0)
         main.setSpacing(0)
@@ -138,21 +127,15 @@ class GameScreen(QWidget):
         top_bar = QHBoxLayout()
         top_bar.setContentsMargins(16, 8, 16, 4)
         self.chapter_label = QLabel("第1章")
-        self.chapter_label.setStyleSheet("color:#c4a35a;font-size:14px;font-weight:bold;background:transparent;")
+        self.chapter_label.setStyleSheet(f"color:{C_ACCENT};font-size:14px;font-weight:bold;background:transparent;")
         self.scene_label = QLabel("📍 opening")
-        self.scene_label.setStyleSheet("color:#8a8a9a;font-size:12px;background:transparent;")
-        self.turn_label = QLabel("")
-        self.turn_label.setStyleSheet("color:#5a5a6a;font-size:11px;background:transparent;")
+        self.scene_label.setStyleSheet(f"color:{C_MUTED};font-size:12px;background:transparent;")
         top_bar.addWidget(self.chapter_label)
         top_bar.addWidget(self.scene_label)
         top_bar.addStretch()
 
         # 存档按钮
-        btn_style = (
-            "QPushButton{background:rgba(22,33,62,0.8);color:#c0b8a8;border:1px solid #3a2a4a;"
-            "border-radius:6px;padding:4px 10px;font-size:12px;}"
-            "QPushButton:hover{background:#533a5e;color:#c4a35a;border-color:#c4a35a;}"
-        )
+        btn_style = topbar_button_style()
         for text, tooltip, slot in [
             ("存档", "保存当前进度", self._on_save),
             ("读档", "加载之前的存档", self._on_load),
@@ -165,16 +148,16 @@ class GameScreen(QWidget):
             btn.setStyleSheet(btn_style)
             top_bar.addWidget(btn)
 
-        top_bar.addWidget(self.turn_label)
         main.addLayout(top_bar)
 
         # ── 中部: 叙事历史区 ─────────────────────
         self.history_display = QTextBrowser()
         self.history_display.setOpenExternalLinks(False)
         self.history_display.setStyleSheet(
-            "QTextBrowser{background-color:#0a0a14;color:#c0b8a8;border:none;"
-            "padding:12px 20px;font-size:13px;}QScrollBar:vertical{width:6px;"
-            "background:#0a0a14;}QScrollBar::handle:vertical{background:#3a2a4a;border-radius:3px;}"
+            f"QTextBrowser{{background-color:{C_PAPER};color:{C_MUTED};border:none;"
+            f"padding:16px 20px;font-size:13px;}}"
+            f"QScrollBar:vertical{{width:6px;background:{C_PAPER};}}"
+            f"QScrollBar::handle:vertical{{background:{C_RULE};border-radius:3px;}}"
         )
         self.history_display.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         main.addWidget(self.history_display, stretch=1)
@@ -182,7 +165,7 @@ class GameScreen(QWidget):
         # ── 底部: 对话框区域 ─────────────────────
         dialog_frame = QFrame()
         dialog_frame.setStyleSheet(
-            "QFrame{background-color:rgba(10,10,26,0.95);border-top:2px solid #3a2a4a;}"
+            f"QFrame{{background-color:{alpha(C_PAPER,0.97)};border-top:2px solid {C_RULE};}}"
         )
         dialog_layout = QVBoxLayout(dialog_frame)
         dialog_layout.setContentsMargins(24, 12, 24, 16)
@@ -191,20 +174,22 @@ class GameScreen(QWidget):
         # 角色名标签
         self.speaker_label = QLabel("")
         self.speaker_label.setStyleSheet(
-            "color:#c4a35a;font-size:15px;font-weight:bold;background:transparent;padding:0 4px;"
+            f"color:{C_INK};font-size:17px;font-weight:700;background:transparent;padding:0 4px;"
         )
         self.speaker_label.hide()
         dialog_layout.addWidget(self.speaker_label)
 
-        # 对话文本区
+        # 对话文本区 (自适应高度)
         self.dialogue_text = QTextBrowser()
         self.dialogue_text.setOpenExternalLinks(False)
-        self.dialogue_text.setFixedHeight(130)
+        self.dialogue_text.setMinimumHeight(100)
+        self.dialogue_text.setMaximumHeight(220)
+        self.dialogue_text.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.dialogue_text.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.dialogue_text.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.dialogue_text.setStyleSheet(
-            "QTextBrowser{background:transparent;color:#e8e0d0;border:none;"
-            "font-size:16px;padding:8px 4px;}QTextBrowser:focus{border:none;}"
+            f"QTextBrowser{{background:transparent;color:{C_INK};border:none;"
+            f"font-size:18px;padding:8px 4px;}}QTextBrowser:focus{{border:none;}}"
         )
         # 点击对话框 = 继续
         self.dialogue_text.viewport().installEventFilter(self)
@@ -213,7 +198,7 @@ class GameScreen(QWidget):
         # 继续指示器
         self.continue_hint = QLabel("▼ 点击继续")
         self.continue_hint.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.continue_hint.setStyleSheet("color:#5a5a6a;font-size:12px;background:transparent;padding:0 4px;")
+        self.continue_hint.setStyleSheet(f"color:{C_SUBTLE};font-size:12px;background:transparent;padding:0 4px;")
         self.continue_hint.hide()
         dialog_layout.addWidget(self.continue_hint)
 
@@ -221,7 +206,7 @@ class GameScreen(QWidget):
 
         # ── 选项区域 ────────────────────────────
         self.choices_widget = QWidget()
-        self.choices_widget.setStyleSheet("background-color:rgba(10,10,26,0.95);border-top:1px solid #3a2a4a;")
+        self.choices_widget.setStyleSheet(f"background-color:{C_PAPER_2};border-top:1px solid {C_RULE};")
         self.choices_layout = QVBoxLayout(self.choices_widget)
         self.choices_layout.setContentsMargins(24, 10, 24, 10)
         self.choices_layout.setSpacing(6)
@@ -234,18 +219,18 @@ class GameScreen(QWidget):
         self.custom_input = QLineEdit()
         self.custom_input.setPlaceholderText("输入你想做的事...")
         self.custom_input.setStyleSheet(
-            "QLineEdit{background:#0f0f23;color:#e0d8c0;border:1px solid #533a5e;"
-            "border-radius:8px;padding:10px 14px;font-size:14px;}"
-            "QLineEdit:focus{border-color:#c4a35a;}"
+            f"QLineEdit{{background:{C_PAPER};color:{C_INK};border:1px solid {C_RULE};"
+            f"border-radius:8px;padding:10px 14px;font-size:14px;}}"
+            f"QLineEdit:focus{{border-color:{C_ACCENT};}}"
         )
         self.custom_input.returnPressed.connect(self._on_custom_input)
         self.send_btn = QPushButton("确认")
         self.send_btn.clicked.connect(self._on_custom_input)
         self.send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.send_btn.setStyleSheet(
-            "QPushButton{background:#16213e;color:#e0d8c0;border:1px solid #533a5e;"
-            "border-radius:8px;padding:10px 20px;font-size:14px;}"
-            "QPushButton:hover{background:#533a5e;border-color:#c4a35a;}"
+            f"QPushButton{{background:{C_PAPER_2};color:{C_INK};border:1px solid {C_RULE};"
+            f"border-radius:8px;padding:10px 20px;font-size:14px;}}"
+            f"QPushButton:hover{{background:{alpha(C_ACCENT,0.2)};border-color:{C_ACCENT};}}"
         )
         input_row.addWidget(self.custom_input)
         input_row.addWidget(self.send_btn)
@@ -268,6 +253,14 @@ class GameScreen(QWidget):
                 self._on_dialogue_clicked()
                 return
         super().keyPressEvent(event)
+
+    def wheelEvent(self, event):
+        """滚轮控制段落前进"""
+        if self._state == "waiting_click" and self._paragraphs:
+            if event.angleDelta().y() < 0:
+                self._on_dialogue_clicked()
+                return
+        super().wheelEvent(event)
 
     # ═══════════════════════════════════════════════
     # 公开方法
@@ -477,8 +470,9 @@ class GameScreen(QWidget):
 
         btn_row = QHBoxLayout()
         ok_btn = QPushButton("从此节点开始")
-        ok_btn.setStyleSheet("background:#c4a35a;color:#1a1a2e;font-weight:bold;padding:8px 20px;")
+        ok_btn.setStyleSheet(dialog_ok_button_style())
         cancel_btn = QPushButton("取消")
+        cancel_btn.setStyleSheet(dialog_cancel_button_style())
         btn_row.addStretch()
         btn_row.addWidget(cancel_btn)
         btn_row.addWidget(ok_btn)
@@ -537,17 +531,17 @@ class GameScreen(QWidget):
                     if speaker:
                         cursor.insertHtml(
                             f'<p style="margin:4px 0;">'
-                            f'<span style="color:#c4a35a;font-weight:bold;">{speaker}</span>'
-                            f'<span style="color:#c0b8a8;">: {body}</span></p>'
+                            f'<span style="color:{HTML_COLORS["dialogue_speaker"]};font-weight:bold;">{speaker}</span>'
+                            f'<span style="color:{HTML_COLORS["dialogue_text"]};">: {body}</span></p>'
                         )
                     else:
                         body_html = body.replace('\n', '<br>')
                         cursor.insertHtml(
-                            f'<p style="margin:6px 0;color:#908880;font-style:italic;">{body_html}</p>'
+                            f'<p style="margin:6px 0;color:{HTML_COLORS["narration"]};'
+                            f'font-style:italic;">{body_html}</p>'
                         )
-                # 回合间分隔
                 cursor.insertHtml(
-                    '<hr style="border:none;border-top:1px solid #2a2a3a;margin:8px 0;">'
+                    f'<hr style="border:none;border-top:1px solid {HTML_COLORS["separator"]};margin:8px 0;">'
                 )
             except Exception:
                 continue
@@ -631,7 +625,6 @@ class GameScreen(QWidget):
                 self.engine.state.chapter_title = turn.chapter_title
         if self.engine:
             s = self.engine.state
-            self.turn_label.setText(f"回合{s.turn_count}")
             self.scene_label.setText(f"📍 {s.current_scene}")
 
         self._update_sidebar()
@@ -656,16 +649,13 @@ class GameScreen(QWidget):
     def _show_next_paragraph(self):
         """显示下一段叙事"""
         if self._para_index >= len(self._paragraphs):
-            # 所有段落显示完毕
             self.dialogue_text.clear()
             self.speaker_label.hide()
             self.continue_hint.hide()
             if self._pending_choices:
-                # 有选项 → 显示选项
                 self._state = "choices"
                 self._show_choices(self._pending_choices)
             else:
-                # 无选项 → 自动请求下一回合
                 self._generate_turn("继续故事")
             return
 
@@ -673,21 +663,26 @@ class GameScreen(QWidget):
         self._para_index += 1
         self._state = "showing"
 
-        # 分析段落类型
         speaker, text = self._parse_paragraph(para)
-
-        # 更新角色名
         if speaker:
             self.speaker_label.setText(speaker)
             self.speaker_label.show()
         else:
             self.speaker_label.hide()
 
-        # 显示对话文本（HTML格式）
         html = self._paragraph_to_html(text)
-        self.dialogue_text.setHtml(html)
 
-        # 等待点击
+        # 平滑切换: 清空 → 延迟 → 显示
+        self.dialogue_text.clear()
+        QTimer.singleShot(80, lambda: self._show_para_content(html))
+
+    def _show_para_content(self, html: str):
+        """延迟显示 + 自适应高度后等待点击"""
+        self.dialogue_text.setHtml(html)
+        # 根据内容自动调整高度
+        doc_height = self.dialogue_text.document().size().height()
+        new_h = min(220, max(100, int(doc_height) + 20))
+        self.dialogue_text.setFixedHeight(new_h)
         QTimer.singleShot(100, self._ready_for_click)
 
     def _ready_for_click(self):
@@ -731,13 +726,12 @@ class GameScreen(QWidget):
         return "", para
 
     def _paragraph_to_html(self, text: str) -> str:
-        """将段落文本转换为 HTML"""
-        # 内心独白: *text* → 斜体
-        text = re.sub(r'\*(.+?)\*', r'<i style="color:#a0a0b0;">\1</i>', text)
-        # 换行
+        """将段落文本转换为 HTML (使用设计令牌颜色)"""
+        text = re.sub(r'\*(.+?)\*',
+                      rf'<i style="color:{HTML_COLORS["inner_thought"]};">\1</i>', text)
         text = text.replace('\n', '<br>')
         return (
-            f'<div style="font-size:16px;line-height:1.8;color:#e8e0d0;">'
+            f'<div style="font-size:18px;line-height:1.9;color:{HTML_COLORS["dialogue_text"]};">'
             f'{text}</div>'
         )
 
@@ -750,14 +744,14 @@ class GameScreen(QWidget):
         if speaker:
             cursor.insertHtml(
                 f'<p style="margin:4px 0;">'
-                f'<span style="color:#c4a35a;font-weight:bold;">{speaker}</span>'
-                f'<span style="color:#c0b8a8;">: {text}</span></p>'
+                f'<span style="color:{HTML_COLORS["dialogue_speaker"]};font-weight:bold;">{speaker}</span>'
+                f'<span style="color:{HTML_COLORS["dialogue_text"]};">: {text}</span></p>'
             )
         else:
-            # 叙述 → 灰色
             text_html = text.replace('\n', '<br>')
             cursor.insertHtml(
-                f'<p style="margin:6px 0;color:#908880;font-style:italic;">{text_html}</p>'
+                f'<p style="margin:6px 0;color:{HTML_COLORS["narration"]};'
+                f'font-style:italic;">{text_html}</p>'
             )
 
         # 滚动到底部
@@ -829,7 +823,6 @@ class GameScreen(QWidget):
                 "role": "assistant",
                 "content": turn.model_dump_json(indent=2)
             })
-            self.turn_label.setText(f"回合{self.engine.state.turn_count}")
             self.scene_label.setText(f"📍 {self.engine.state.current_scene}")
         self._update_sidebar()
 
@@ -860,19 +853,9 @@ class GameScreen(QWidget):
     # ═══════════════════════════════════════════════
 
     def _update_sidebar(self):
-        """更新标题栏中的好感度等信息（简化版）"""
-        if not self.engine:
-            return
-        s = self.engine.state
-        parts = []
-        if s.relationships:
-            parts.append(" | ".join(f"{n}:{v:+d}" for n, v in list(s.relationships.items())[:3]))
-        if s.flags:
-            parts.append(" | ".join(f"{k}={v}" for k, v in list(s.flags.items())[:2]))
-        if parts:
-            self.turn_label.setText(f"回合{s.turn_count} | {' | '.join(parts)}")
-        else:
-            self.turn_label.setText(f"回合{s.turn_count}")
+        """更新场景标签"""
+        if self.engine:
+            self.scene_label.setText(f"📍 {self.engine.state.current_scene}")
 
     # ═══════════════════════════════════════════════
     # 存档 & 输入控制
@@ -911,8 +894,9 @@ class GameScreen(QWidget):
         layout.addWidget(lst)
         btn_row = QHBoxLayout()
         ok_btn = QPushButton("加载")
-        ok_btn.setStyleSheet("background:#c4a35a;color:#1a1a2e;font-weight:bold;padding:8px 24px;")
+        ok_btn.setStyleSheet(dialog_ok_button_style())
         cancel_btn = QPushButton("取消")
+        cancel_btn.setStyleSheet(dialog_cancel_button_style())
         ok_btn.clicked.connect(dlg.accept)
         cancel_btn.clicked.connect(dlg.reject)
         lst.itemDoubleClicked.connect(lambda: dlg.accept())

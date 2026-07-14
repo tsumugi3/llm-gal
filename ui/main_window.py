@@ -68,21 +68,5 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentIndex(0)
 
     def _apply_stylesheet(self):
-        self.setStyleSheet("""
-            QMainWindow { background-color: #1a1a2e; }
-            QWidget { background-color: #1a1a2e; color: #e0d8c0; font-family: "Microsoft YaHei", "SimHei", sans-serif; }
-            QPushButton { background-color: #16213e; color: #e0d8c0; border: 1px solid #533a5e; border-radius: 8px; padding: 10px 20px; font-size: 14px; }
-            QPushButton:hover { background-color: #533a5e; border-color: #c4a35a; }
-            QPushButton:pressed { background-color: #3d2a4a; }
-            QTextEdit, QPlainTextEdit, QTextBrowser { background-color: #0f0f23; color: #e0d8c0; border: 1px solid #533a5e; border-radius: 6px; padding: 12px; font-size: 15px; line-height: 1.6; }
-            QLineEdit { background-color: #0f0f23; color: #e0d8c0; border: 1px solid #533a5e; border-radius: 6px; padding: 8px 12px; font-size: 14px; }
-            QLineEdit:focus { border-color: #c4a35a; }
-            QLabel { color: #c4a35a; font-size: 13px; }
-            QTabWidget::pane { border: 1px solid #533a5e; background-color: #1a1a2e; }
-            QTabBar::tab { background-color: #16213e; color: #e0d8c0; padding: 8px 16px; border: 1px solid #533a5e; }
-            QTabBar::tab:selected { background-color: #533a5e; color: #c4a35a; }
-            QListWidget { background-color: #0f0f23; color: #e0d8c0; border: 1px solid #533a5e; border-radius: 6px; font-size: 13px; }
-            QListWidget::item { padding: 8px 12px; }
-            QListWidget::item:selected { background-color: #533a5e; color: #c4a35a; }
-            QListWidget::item:hover { background-color: #2a2a4a; }
-        """)
+        from ui.design_tokens import build_global_stylesheet
+        self.setStyleSheet(build_global_stylesheet())
